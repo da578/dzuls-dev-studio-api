@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "../../db";
 import { users } from "../../db/schema";
+import { hashPassword } from "../../shared/crypto";
 import { ConflictError, NotFoundError } from "../../shared/errors";
 
 /**
@@ -82,7 +83,7 @@ export abstract class UserService {
       throw new ConflictError("Email already exists");
     }
 
-    const passwordHash = await Bun.password.hash(payload.passwordRaw);
+    const passwordHash = await hashPassword(payload.passwordRaw);
 
     const [newUser] = await db
       .insert(users)
@@ -134,7 +135,7 @@ export abstract class UserService {
     if (payload.email) updateData.email = payload.email;
     if (payload.role) updateData.role = payload.role;
     if (payload.passwordRaw) {
-      updateData.passwordHash = await Bun.password.hash(payload.passwordRaw);
+      updateData.passwordHash = await hashPassword(payload.passwordRaw);
     }
 
     const [updated] = await db.update(users).set(updateData).where(eq(users.id, id)).returning({

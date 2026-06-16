@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "../../db";
 import { revokedTokens, users } from "../../db/schema";
+import { hashPassword, verifyPassword } from "../../shared/crypto";
 import { ConflictError, NotFoundError, UnauthorizedError } from "../../shared/errors";
 
 /**
@@ -34,7 +35,7 @@ export abstract class AuthService {
       throw new ConflictError("Email is already registered");
     }
 
-    const passwordHash = await Bun.password.hash(passwordRaw);
+    const passwordHash = await hashPassword(passwordRaw);
 
     const [newUser] = await db
       .insert(users)
@@ -73,7 +74,7 @@ export abstract class AuthService {
       throw new UnauthorizedError("Invalid email or password");
     }
 
-    const isValid = await Bun.password.verify(passwordRaw, user.passwordHash);
+    const isValid = await verifyPassword(passwordRaw, user.passwordHash);
 
     if (!isValid) {
       throw new UnauthorizedError("Invalid email or password");

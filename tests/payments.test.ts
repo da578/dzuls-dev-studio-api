@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from "bun:test";
 import { features, payments, users } from "../src/db/schema";
 import { app } from "../src/index";
+import { sha512 } from "../src/shared/crypto";
 import { setupTestDb, testDb } from "./setup";
 
 /**
@@ -62,10 +63,9 @@ describe("Payments Webhook & Idempotency Tests", () => {
     };
 
     const serverKey = process.env.MIDTRANS_SERVER_KEY || "";
-    const hasher = new Bun.CryptoHasher("sha512");
-
-    hasher.update(`${payload.order_id}${payload.status_code}${payload.gross_amount}${serverKey}`);
-    payload.signature_key = hasher.digest("hex");
+    payload.signature_key = await sha512(
+      `${payload.order_id}${payload.status_code}${payload.gross_amount}${serverKey}`
+    );
     const idempotencyKey = `idemp-key-${Date.now()}-${Math.random()}`;
 
     const res1 = await app.handle(
@@ -99,11 +99,9 @@ describe("Payments Webhook & Idempotency Tests", () => {
     expect(body2.data).toEqual(body1.data);
 
     const payload3 = { ...payload, gross_amount: "20000.00" };
-    const hasher3 = new Bun.CryptoHasher("sha512");
-    hasher3.update(
+    payload3.signature_key = await sha512(
       `${payload3.order_id}${payload3.status_code}${payload3.gross_amount}${serverKey}`
     );
-    payload3.signature_key = hasher3.digest("hex");
 
     const res3 = await app.handle(
       new Request("http://localhost/payments/webhook", {
@@ -129,9 +127,9 @@ describe("Payments Webhook & Idempotency Tests", () => {
     };
 
     const serverKey = process.env.MIDTRANS_SERVER_KEY || "";
-    const hasher = new Bun.CryptoHasher("sha512");
-    hasher.update(`${payload.order_id}${payload.status_code}${payload.gross_amount}${serverKey}`);
-    payload.signature_key = hasher.digest("hex");
+    payload.signature_key = await sha512(
+      `${payload.order_id}${payload.status_code}${payload.gross_amount}${serverKey}`
+    );
 
     const res = await app.handle(
       new Request("http://localhost/payments/webhook", {
@@ -159,9 +157,9 @@ describe("Payments Webhook & Idempotency Tests", () => {
     };
 
     const serverKey = process.env.MIDTRANS_SERVER_KEY || "";
-    const hasher = new Bun.CryptoHasher("sha512");
-    hasher.update(`${payload.order_id}${payload.status_code}${payload.gross_amount}${serverKey}`);
-    payload.signature_key = hasher.digest("hex");
+    payload.signature_key = await sha512(
+      `${payload.order_id}${payload.status_code}${payload.gross_amount}${serverKey}`
+    );
 
     const res = await app.handle(
       new Request("http://localhost/payments/webhook", {
@@ -191,9 +189,9 @@ describe("Payments Webhook & Idempotency Tests", () => {
     };
 
     const serverKey = process.env.MIDTRANS_SERVER_KEY || "";
-    const hasher = new Bun.CryptoHasher("sha512");
-    hasher.update(`${payload.order_id}${payload.status_code}${payload.gross_amount}${serverKey}`);
-    payload.signature_key = hasher.digest("hex");
+    payload.signature_key = await sha512(
+      `${payload.order_id}${payload.status_code}${payload.gross_amount}${serverKey}`
+    );
 
     const res = await app.handle(
       new Request("http://localhost/payments/webhook", {

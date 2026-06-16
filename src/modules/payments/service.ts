@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "../../db";
 import { features, idempotencyKeys, payments } from "../../db/schema";
+import { sha256, sha512 } from "../../shared/crypto";
 import { BadRequestError, ConflictError, NotFoundError } from "../../shared/errors";
 
 /**
@@ -40,17 +41,12 @@ export abstract class PaymentService {
     const serverKey = process.env.MIDTRANS_SERVER_KEY || "";
     const signatureInput = `${payload.order_id}${payload.status_code}${payload.gross_amount}${serverKey}`;
 
-    const hasher512 = new Bun.CryptoHasher("sha512");
-    hasher512.update(signatureInput);
-
-    const expectedSignature = hasher512.digest("hex");
+    const expectedSignature = await sha512(signatureInput);
     if (expectedSignature !== payload.signature_key) {
       throw new BadRequestError("Invalid webhook signature");
     }
 
-    const hasher256 = new Bun.CryptoHasher("sha256");
-    hasher256.update(JSON.stringify(payload));
-    const requestHash = hasher256.digest("hex");
+    const requestHash = await sha256(JSON.stringify(payload));
 
     const existingKey = await db.query.idempotencyKeys.findFirst({
       where: eq(idempotencyKeys.key, idempotencyKey),
