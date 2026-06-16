@@ -1,0 +1,26 @@
+name = "dzuls-dev-studio-api"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+compatibility_flags = [ "nodejs_compat"]
+
+# Environment variables for production
+# Note: Secrets like DATABASE_URL, JWT_ACCESS_SECRET, etc., should NOT be put here.
+# Set them via Cloudflare Dashboard or `wrangler secret put <NAME>`
+[vars]
+NODE_ENV = "production"
+LOG_LEVEL = "info"
+
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1
